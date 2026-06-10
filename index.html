@@ -34,6 +34,8 @@
 
     <div id="locName" class="hudPanel"></div>
 
+    <div id="enhanceStatus" class="hudPanel hidden"></div>
+
     <div id="clickToFly" class="hidden">CLICK TO FLY</div>
   </div>
 
@@ -45,6 +47,8 @@
     </form>
     <select id="locSelect" title="Teleport (keys 1-9)"></select>
     <button id="modeBtn" title="Toggle flight physics (V)">⟠ LITTLE BIRD</button>
+    <button id="enhanceBtn" title="Stream maximum tile detail (X)">✦ ENHANCE</button>
+    <button id="svBtn" title="Street View here (B)">⊙ STREET</button>
     <select id="qualitySelect" title="Graphics quality">
       <option value="low">Quality: Low</option>
       <option value="medium">Quality: Medium</option>
@@ -69,6 +73,8 @@
       <tr><td>1 – 9</td><td>Teleport to landmark</td></tr>
       <tr><td>G</td><td>Go anywhere — type a place name or coordinates
         (<span class="mono">48.858, 2.294</span> or <span class="mono">48°51′29″N 2°17′40″E</span>)</td></tr>
+      <tr><td>X</td><td>Enhance — stream max building/terrain detail (GPU-heavy)</td></tr>
+      <tr><td>B</td><td>Street View panorama at your position</td></tr>
       <tr><td>R</td><td>Reset position</td></tr>
       <tr><td>T</td><td>Cycle time of day</td></tr>
       <tr><td>M</td><td>Mute rotor sound</td></tr>
@@ -79,6 +85,20 @@
     <p class="dim">Photorealistic 3D Tiles streamed live from Google — the same data as Google Earth.
       Place search by <a href="https://nominatim.openstreetmap.org" target="_blank" rel="noopener">Nominatim / OpenStreetMap</a>.</p>
     <p class="dim" id="gpuInfo">GPU: detecting…</p>
+  </div>
+
+  <!-- Street View companion -->
+  <div id="svPanel" class="hidden">
+    <div id="svHeader">
+      <span>⊙ STREET VIEW</span>
+      <span id="svCoords" class="mono"></span>
+      <a id="svOpen" href="#" target="_blank" rel="noopener">OPEN IN MAPS ↗</a>
+      <button id="svClose" title="Close (B)">✕</button>
+    </div>
+    <iframe id="svFrame" allowfullscreen loading="lazy"
+      referrerpolicy="no-referrer-when-downgrade"></iframe>
+    <p id="svNote" class="dim hidden">In-app panoramas need a Google key with the
+      <b>Maps Embed API</b> enabled — use the link above instead (no key required).</p>
   </div>
 
   <div id="gpuWarn" class="hidden">
@@ -121,6 +141,6 @@
     });
   </script>
   <script src="https://cesium.com/downloads/cesiumjs/releases/1.130/Build/Cesium/Cesium.js"></script>
-  <script type="module" src="js/main.js?v=14"></script>
+  <script type="module" src="js/main.js?v=15"></script>
 </body>
 </html>

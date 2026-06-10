@@ -196,6 +196,73 @@ html, body {
 
 #goInput:focus { border-color: #8cffbe; width: 290px; }
 #goInput::placeholder { color: rgba(232, 244, 255, 0.45); }
+
+#enhanceBtn.on {
+  color: #04121c;
+  background: linear-gradient(180deg, #8cffbe, #4fd690);
+  border-color: #8cffbe;
+}
+
+/* ---------- Enhance status ---------- */
+
+#enhanceStatus {
+  top: 62px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 6px 14px;
+  font-size: 11px;
+  letter-spacing: 2px;
+  color: #8cffbe;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- Street View companion ---------- */
+
+#svPanel {
+  position: absolute;
+  top: 64px;
+  right: 16px;
+  z-index: 11;
+  width: min(540px, 46vw);
+  display: flex;
+  flex-direction: column;
+  background: rgba(6, 14, 20, 0.95);
+  border: 1px solid rgba(140, 255, 190, 0.35);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+
+#svHeader {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 8px 12px;
+  font-size: 11px;
+  letter-spacing: 2px;
+  color: #8cffbe;
+}
+
+#svHeader #svCoords { opacity: 0.6; letter-spacing: 0; }
+#svHeader a { color: #8cffbe; margin-left: auto; font-size: 11px; }
+
+#svClose {
+  background: none;
+  border: none;
+  color: #e8f4ff;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 0 2px;
+}
+
+#svFrame {
+  width: 100%;
+  height: 360px;
+  border: 0;
+  background: #000;
+}
+
+#svNote { margin: 0; padding: 12px 14px; }
 #modeBtn { letter-spacing: 1px; color: #8cffbe; }
 
 /* ---------- Help ---------- */

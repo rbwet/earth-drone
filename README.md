@@ -33,6 +33,13 @@ Dive the Grand Canyon. Thread the towers of Dubai. Buzz your own street.
   turns, barrel rolls), and *OG Drone*, a fly-where-you-look FPV quad.
 - 🎮 **Feel-first physics** — attitude inertia, momentum without ice-skating,
   managed gravity that punishes dives and hard banks but never fights you.
+- ✦ **Enhance mode** — press **X** and the sim streams the deepest level of
+  detail Google has for everything around you, layer by layer, with extra
+  supersampling and a 3 GB tile cache. GPU-heavy by design; toggle off to
+  give the frame rate back.
+- ⊙ **Street View companion** — press **B** for the real panorama at the
+  drone's position, filling in the facade detail aerial photogrammetry
+  can't capture.
 - 🔊 **Procedural rotor audio** — blade-pass thump and speed-reactive wind,
   synthesized entirely in WebAudio. Zero audio files.
 - 🖥️ **Glass cockpit** — compass tape, speed with boost bar, AGL/MSL altitude,
@@ -84,6 +91,8 @@ already near level. Nose angle sets your speed; flare to brake.
 | --- | --- |
 | **V** | Toggle flight model |
 | **G** | Search — place name, address, or coordinates |
+| **X** | Enhance — stream maximum tile detail (GPU-heavy) |
+| **B** | Street View panorama at your position |
 | **1–9** | Teleport to landmarks (more in the dropdown) |
 | **R** | Reset position |
 | **T** | Cycle time of day |
@@ -133,6 +142,7 @@ a building never re-streams it.
 | [`js/drone.js`](js/drone.js) | Both flight models in the local east-north-up frame, frame-rate-independent smoothing, NaN watchdog, collision via throttled `scene.sampleHeight` picks |
 | [`js/controls.js`](js/controls.js) | Pointer lock + keyboard state, input sanitization |
 | [`js/geocode.js`](js/geocode.js) | Coordinate parsing (decimal / DMS / Maps URLs) and free-text geocoding (Nominatim → Photon) |
+| [`js/enhance.js`](js/enhance.js) | Enhance mode — progressive max-LOD streaming, supersampling bump, big tile cache |
 | [`js/hud.js`](js/hud.js) | Compass tape, speed, altitude, coordinates |
 | [`js/audio.js`](js/audio.js) | WebAudio rotor + wind synthesis |
 | [`setkey.html`](setkey.html) | Stores an API key from the URL *fragment* — never touches the server or the source |

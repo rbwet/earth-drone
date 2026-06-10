@@ -1,5 +1,6 @@
 import { LOCATIONS } from "./locations.js";
 import { parseCoords, geocode } from "./geocode.js";
+import { Enhance } from "./enhance.js";
 import { Controls } from "./controls.js";
 import { Drone } from "./drone.js";
 import { Hud } from "./hud.js";
@@ -40,9 +41,18 @@ const els = {
   qualitySelect: document.getElementById("qualitySelect"),
   locName: document.getElementById("locName"),
   modeBtn: document.getElementById("modeBtn"),
+  enhanceBtn: document.getElementById("enhanceBtn"),
+  svBtn: document.getElementById("svBtn"),
+  svPanel: document.getElementById("svPanel"),
+  svCoords: document.getElementById("svCoords"),
+  svOpen: document.getElementById("svOpen"),
+  svClose: document.getElementById("svClose"),
+  svFrame: document.getElementById("svFrame"),
+  svNote: document.getElementById("svNote"),
 };
 
-let viewer, drone, controls, hud, audio, tileset;
+let viewer, drone, controls, hud, audio, tileset, enhance;
+let lastState; // most recent drone state — street view needs lon/lat/heading
 
 // Which adapter did the browser actually give us? "SwiftShader" or
 // "Basic Render" here means software rendering — the #1 cause of lag.
@@ -139,6 +149,7 @@ async function init(key) {
   tileset.maximumCacheOverflowBytes = 1536 * 1024 * 1024;
   scene.primitives.add(tileset);
   applyQuality(els.qualitySelect.value);
+  enhance = new Enhance(viewer, tileset, document.getElementById("enhanceStatus"));
 
   // --- Wiring ---
   controls = new Controls(viewer.canvas);
@@ -171,6 +182,21 @@ async function init(key) {
     els.modeBtn.blur(); // don't let Space re-trigger the button while flying
   });
 
+  controls.onEnhance = () => setEnhance(!enhance.active);
+  els.enhanceBtn.addEventListener("click", () => {
+    setEnhance(!enhance.active);
+    els.enhanceBtn.blur();
+  });
+  controls.onStreetView = toggleStreetView;
+  els.svBtn.addEventListener("click", () => {
+    toggleStreetView();
+    els.svBtn.blur();
+  });
+  els.svClose.addEventListener("click", closeStreetView);
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") closeStreetView();
+  });
+
   document.addEventListener("flightlock", (e) => {
     els.clickToFly.classList.toggle("hidden", e.detail);
     if (e.detail) els.helpPanel.classList.add("hidden");
@@ -190,6 +216,7 @@ async function init(key) {
     if (e.key === "Escape") els.goInput.blur();
   });
   els.qualitySelect.addEventListener("change", () => {
+    setEnhance(false); // a manual preset choice overrides enhance
     applyQuality(els.qualitySelect.value);
     els.qualitySelect.blur();
   });
@@ -210,8 +237,16 @@ async function init(key) {
     const dt = (now - last) / 1000;
     last = now;
     const state = drone.update(dt);
+    lastState = state;
     hud.update(state);
     audio.update(state.throttle, state.speedFrac);
+
+    // Enhance owns tile detail while active — no governor, no speed
+    // scaling, just an ever-deepening stream until SSE 1 is resident.
+    if (enhance.active) {
+      enhance.tick(dt);
+      return;
+    }
 
     fpsFrames++;
     fpsTime += dt;
@@ -258,6 +293,58 @@ function flyTo(dest) {
   drone.setPose(dest.lon, dest.lat, dest.height, dest.heading ?? 0, dest.pitch ?? -12);
   showStatus(dest.name.toUpperCase());
   setLocalTime(TIMES_LOCAL[timeIdx]);
+  enhance?.restart(baseSSE); // new skyline — ramp the detail in fresh
+}
+
+function setEnhance(on) {
+  if (!enhance || enhance.active === on) return;
+  if (on) {
+    enhance.start(tileset.maximumScreenSpaceError);
+    els.enhanceBtn.classList.add("on");
+  } else {
+    enhance.stop();
+    els.enhanceBtn.classList.remove("on");
+    applyQuality(els.qualitySelect.value);
+  }
+}
+
+// Street View companion: the 3D mesh is photogrammetry from the air, so
+// facades and street level can be mushy — this fills the gap with the
+// real panorama for wherever the drone is. The in-app embed needs a
+// Google key; the "open in maps" link works for everyone, no key at all.
+function openStreetView() {
+  if (!lastState) return;
+  document.exitPointerLock?.();
+  const lat = lastState.lat.toFixed(6);
+  const lon = lastState.lon.toFixed(6);
+  const heading = Math.round(Cesium.Math.toDegrees(lastState.heading));
+  els.svCoords.textContent = `${lat}, ${lon}`;
+  els.svOpen.href = "https://www.google.com/maps/@?api=1&map_action=pano"
+    + `&viewpoint=${lat},${lon}&heading=${heading}`;
+  const key = localStorage.getItem(KEY_STORAGE) || DEFAULT_KEY;
+  if (key && !isIonToken(key)) {
+    els.svFrame.src = "https://www.google.com/maps/embed/v1/streetview"
+      + `?key=${encodeURIComponent(key)}&location=${lat},${lon}`
+      + `&heading=${heading}&pitch=0&fov=90`;
+    els.svFrame.classList.remove("hidden");
+    els.svNote.classList.add("hidden");
+  } else {
+    els.svFrame.src = "about:blank";
+    els.svFrame.classList.add("hidden");
+    els.svNote.classList.remove("hidden");
+  }
+  els.svPanel.classList.remove("hidden");
+}
+
+function closeStreetView() {
+  if (els.svPanel.classList.contains("hidden")) return;
+  els.svPanel.classList.add("hidden");
+  els.svFrame.src = "about:blank"; // stop the embed from rendering offscreen
+}
+
+function toggleStreetView() {
+  if (els.svPanel.classList.contains("hidden")) openStreetView();
+  else closeStreetView();
 }
 
 function teleport(i) {

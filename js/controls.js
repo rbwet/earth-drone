@@ -17,6 +17,8 @@ export class Controls {
     this.onChangeKey = null;
     this.onToggleMode = null;
     this.onGoTo = null;      // focus the location search box
+    this.onEnhance = null;   // toggle max-detail streaming
+    this.onStreetView = null;
 
     canvas.addEventListener("click", () => {
       if (!this.locked) canvas.requestPointerLock();
@@ -45,6 +47,8 @@ export class Controls {
       if (code === "KeyH") { this.onToggleHelp?.(); e.preventDefault(); return; }
       if (code === "KeyK") { this.onChangeKey?.(); return; }
       if (code === "KeyG") { this.onGoTo?.(); e.preventDefault(); return; }
+      if (code === "KeyX") { this.onEnhance?.(); return; }
+      if (code === "KeyB") { this.onStreetView?.(); return; }
 
       if (!this.locked) return;
 
