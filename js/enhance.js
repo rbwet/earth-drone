@@ -15,7 +15,11 @@
 
 const MIN_SSE = 1;       // deepest LOD the tileset will serve
 const RAMP = 0.55;       // SSE multiplier per step
-const CACHE_BYTES = 3 * 1024 * 1024 * 1024; // hold the whole area in VRAM
+const CACHE_BYTES = 6 * 1024 * 1024 * 1024; // tile retention ceiling — the
+// cache fills as you explore, so several neighborhoods stay resident and
+// flying back over them costs nothing. Demand-driven: an unexplored spot
+// won't fill it, and that's correct.
+const MSAA_SAMPLES = 8; // multisampled targets at 3x scale eat real VRAM
 
 // Adaptive supersampling: vsync caps the frame *rate*, so a GPU that
 // finishes early just idles — the only way to use the headroom is to
@@ -23,12 +27,16 @@ const CACHE_BYTES = 3 * 1024 * 1024 * 1024; // hold the whole area in VRAM
 // steps up while the frame rate holds near refresh and steps back down
 // if it sags, settling wherever the GPU becomes the limit. Capped so
 // the framebuffer never exceeds ~8k on its long edge.
-const SCALE_MIN = 1.5;     // floor while enhance is active
+const SCALE_MIN = 1.5;     // floor while enhance is active — but never
+                           // below the user's own preset scale, so
+                           // enhance can't render *smaller* than normal
 const SCALE_MAX = 3.0;     // 9x the pixels of native — plenty
 const SCALE_STEP = 0.25;
 const TUNE_WINDOW = 1.25;  // s of FPS averaging per decision
 const FPS_UP = 55;         // at/above this: GPU has headroom, push harder
-const FPS_DOWN = 42;       // below this: too heavy, back off
+const FPS_DOWN = 30;       // below this: too heavy, back off — enhance is
+                           // explicitly allowed to be laggy, so only truly
+                           // unflyable frame rates retreat
 
 // tilesLoaded almost never settles to true over a dense area — the idle
 // hover wobble alone keeps a trickle of requests in flight forever. So a
@@ -52,13 +60,18 @@ export class Enhance {
     this.active = true;
     this.startSSE = Math.max(fromSSE, MIN_SSE + 0.001);
     this.sse = this.startSSE;
+    const scene = this.viewer.scene;
     this.saved = {
       scale: this.viewer.resolutionScale,
       cacheBytes: this.tileset.cacheBytes,
       overflowBytes: this.tileset.maximumCacheOverflowBytes,
+      msaa: scene.msaaSamples,
+      hdr: scene.highDynamicRange,
     };
     this.tileset.cacheBytes = CACHE_BYTES;
     this.tileset.maximumCacheOverflowBytes = CACHE_BYTES;
+    scene.msaaSamples = MSAA_SAMPLES; // Cesium clamps to what the GPU supports
+    scene.highDynamicRange = true;
 
     // Framebuffer guard: never push the render target past ~8k pixels
     // on its long edge, whatever the screen and devicePixelRatio are.
@@ -69,7 +82,8 @@ export class Enhance {
         * (window.devicePixelRatio || 1);
       if (native > 0) this.scaleCap = Math.min(SCALE_MAX, 8192 / native);
     }
-    this.scale = Math.min(Math.max(this.saved.scale, SCALE_MIN), this.scaleCap);
+    this.scaleFloor = Math.min(Math.max(this.saved.scale, SCALE_MIN), this.scaleCap);
+    this.scale = this.scaleFloor;
     this.viewer.resolutionScale = this.scale;
 
     this.statusTimer = 0;
@@ -85,6 +99,8 @@ export class Enhance {
     this.viewer.resolutionScale = this.saved.scale;
     this.tileset.cacheBytes = this.saved.cacheBytes;
     this.tileset.maximumCacheOverflowBytes = this.saved.overflowBytes;
+    this.viewer.scene.msaaSamples = this.saved.msaa;
+    this.viewer.scene.highDynamicRange = this.saved.hdr;
     this.statusEl.classList.add("hidden");
   }
 
@@ -124,8 +140,8 @@ export class Enhance {
       if (fps >= FPS_UP && this.scale < this.scaleCap) {
         this.scale = Math.min(this.scaleCap, this.scale + SCALE_STEP);
         this.viewer.resolutionScale = this.scale;
-      } else if (fps < FPS_DOWN && this.scale > SCALE_MIN) {
-        this.scale = Math.max(SCALE_MIN, this.scale - SCALE_STEP);
+      } else if (fps < FPS_DOWN && this.scale > this.scaleFloor) {
+        this.scale = Math.max(this.scaleFloor, this.scale - SCALE_STEP);
         this.viewer.resolutionScale = this.scale;
       }
     }
@@ -134,7 +150,8 @@ export class Enhance {
     if (this.statusTimer > 0) return;
     this.statusTimer = 0.25;
 
-    const scaleTag = `${this.scale.toFixed(2)}× render`;
+    const residentGB = (t.totalMemoryUsageInBytes ?? 0) / 1024 ** 3;
+    const scaleTag = `${this.scale.toFixed(2)}× render • ${residentGB.toFixed(2)} GB tiles`;
     if (this.sse <= MIN_SSE && (t.tilesLoaded || pending <= SETTLE_PENDING)) {
       this.statusEl.textContent =
         `✦ MAX DETAIL — everything Google has is loaded • ${scaleTag}`;

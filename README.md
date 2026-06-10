@@ -34,10 +34,12 @@ Dive the Grand Canyon. Thread the towers of Dubai. Buzz your own street.
 - 🎮 **Feel-first physics** — attitude inertia, momentum without ice-skating,
   managed gravity that punishes dives and hard banks but never fights you.
 - ✦ **Enhance mode** — press **X** and the sim streams the deepest level of
-  detail Google has for everything around you, layer by layer, with a 3 GB
-  tile cache and **adaptive supersampling**: the render scale keeps climbing
-  (up to 3× native) until your GPU — not vsync — is the limit, and backs off
-  if the frame rate sags. GPU-heavy by design; toggle off to give it back.
+  detail Google has for everything around you, layer by layer, with 8× MSAA,
+  HDR, a 6 GB tile cache, and **adaptive supersampling**: the render scale
+  keeps climbing (up to 3× native) until your GPU — not vsync — is the limit,
+  never dropping below your chosen preset. The HUD shows the live render
+  scale and resident tile memory. GPU-heavy by design; toggle off to give it
+  back.
 - ⊙ **Street View companion** — press **B** for the real panorama at the
   drone's position, filling in the facade detail aerial photogrammetry
   can't capture.
