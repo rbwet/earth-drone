@@ -36,6 +36,7 @@ const els = {
   locSelect: document.getElementById("locSelect"),
   qualitySelect: document.getElementById("qualitySelect"),
   locName: document.getElementById("locName"),
+  modeBtn: document.getElementById("modeBtn"),
 };
 
 let viewer, drone, controls, hud, audio, tileset;
@@ -149,6 +150,20 @@ async function init(key) {
   controls.onCycleTime = cycleTime;
   controls.onToggleMute = () => audio.toggleMute();
   controls.onChangeKey = changeKey;
+  const toggleFlightModel = () => {
+    const m = drone.toggleMode();
+    const label = m === "heli" ? "LITTLE BIRD" : "OG DRONE";
+    els.modeBtn.textContent = (m === "heli" ? "⟠ " : "◈ ") + label;
+    els.locName.textContent = "FLIGHT MODEL: " + label;
+    els.locName.style.opacity = "0.95";
+    clearTimeout(locNameTimer);
+    locNameTimer = setTimeout(() => { els.locName.style.opacity = "0"; }, 3000);
+  };
+  controls.onToggleMode = toggleFlightModel;
+  els.modeBtn.addEventListener("click", () => {
+    toggleFlightModel();
+    els.modeBtn.blur(); // don't let Space re-trigger the button while flying
+  });
 
   document.addEventListener("flightlock", (e) => {
     els.clickToFly.classList.toggle("hidden", e.detail);
@@ -196,8 +211,9 @@ async function init(key) {
     // Speed-adaptive detail: request more tile detail the faster you fly,
     // up to 45% more aggressive at full boost. The governor still wins if
     // the frame rate can't keep up.
+    const speedFrac = Number.isFinite(state.speedFrac) ? state.speedFrac : 0;
     tileset.maximumScreenSpaceError =
-      Math.max(2, governedSSE * (1 - 0.45 * state.speedFrac));
+      Math.max(2, governedSSE * (1 - 0.45 * speedFrac));
   });
 
   const hideLoading = () => {

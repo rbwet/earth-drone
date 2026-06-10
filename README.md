@@ -32,13 +32,24 @@ start screen (it's stored only in your browser's localStorage):
 
 ## Controls
 
+Two flight models, toggled with **V**. The default is **Little Bird** —
+Battlefield-style helicopter controls: the mouse is the cyclic and all
+horizontal motion comes from tilting the airframe.
+
+| Input | Little Bird (default) | FPV drone (V) |
+| --- | --- | --- |
+| Mouse | Cyclic — push forward = nose down, sideways = bank | Look / steer |
+| W / S | Collective — climb / descend | Forward / backward (where you look) |
+| A / D | Rudder — yaw | Strafe |
+| Space / C | Collective (alias) | Climb / descend |
+| Shift | Emergency power | Boost (~340 km/h, FOV kick) |
+
+Attitude holds where you put it — bank stays banked, barrel rolls work; a
+gentle hover assist levels the airframe only when you're already near level.
+
 | Input | Action |
 | --- | --- |
-| Mouse | Look / steer (click the screen to capture the mouse) |
-| W / S | Fly forward / backward — you fly where you look |
-| A / D | Strafe |
-| Space / C | Climb / descend |
-| Shift | Boost (~340 km/h, FOV kick) |
+| V | Toggle flight model |
 | 1–9 | Teleport to landmarks |
 | R | Reset position |
 | T | Cycle time of day |
@@ -51,8 +62,8 @@ start screen (it's stored only in your browser's localStorage):
 
 - Graphics quality dropdown (top left) maps to the tileset's
   `maximumScreenSpaceError` — Ultra also renders at native device resolution.
-- Flight feel constants live in `js/drone.js` (`TUNE`): thrust, drag, max
-  speeds, bank angle, FOV kick.
+- Flight feel constants live in `js/drone.js` (`HELI` and `FPV`): body
+  rates, lift, drag, hover assist, FOV kick.
 - Add your own spawn points in `js/locations.js`.
 
 ## How it works

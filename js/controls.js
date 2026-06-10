@@ -15,6 +15,7 @@ export class Controls {
     this.onCycleTime = null;
     this.onToggleMute = null;
     this.onChangeKey = null;
+    this.onToggleMode = null;
 
     canvas.addEventListener("click", () => {
       if (!this.locked) canvas.requestPointerLock();
@@ -28,8 +29,11 @@ export class Controls {
 
     document.addEventListener("mousemove", (e) => {
       if (!this.locked) return;
-      this.mouseDX += e.movementX;
-      this.mouseDY += e.movementY;
+      // movementX/Y can be undefined or huge garbage around pointer-lock
+      // transitions on some devices — never let that into the physics.
+      const mx = e.movementX, my = e.movementY;
+      if (Number.isFinite(mx) && Math.abs(mx) < 1000) this.mouseDX += mx;
+      if (Number.isFinite(my) && Math.abs(my) < 1000) this.mouseDY += my;
     });
 
     document.addEventListener("keydown", (e) => {
@@ -50,6 +54,7 @@ export class Controls {
       if (code === "KeyR") { this.onReset?.(); return; }
       if (code === "KeyT") { this.onCycleTime?.(); return; }
       if (code === "KeyM") { this.onToggleMute?.(); return; }
+      if (code === "KeyV") { this.onToggleMode?.(); return; }
 
       this.keys.add(code);
       if (code === "Space" || code === "ShiftLeft") e.preventDefault();
@@ -71,10 +76,17 @@ export class Controls {
 
   get axes() {
     const k = (c) => (this.keys.has(c) ? 1 : 0);
+    const clamp1 = (v) => Math.max(-1, Math.min(1, v));
     return {
+      // FPV model
       forward: k("KeyW") - k("KeyS"),
       strafe: k("KeyD") - k("KeyA"),
       vertical: k("Space") - (k("KeyC") + k("ControlLeft") > 0 ? 1 : 0),
+      // Heli (Battlefield) model: W/S collective, A/D rudder.
+      // Space/C/Ctrl also work as collective for muscle memory.
+      collective: clamp1(k("KeyW") + k("Space")
+        - (k("KeyS") + k("KeyC") + k("ControlLeft") > 0 ? 1 : 0)),
+      yaw: k("KeyD") - k("KeyA"),
       boost: this.keys.has("ShiftLeft") || this.keys.has("ShiftRight"),
     };
   }

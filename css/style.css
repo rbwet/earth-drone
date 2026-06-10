@@ -178,7 +178,8 @@ html, body {
   outline: none;
 }
 
-#topBar button { width: 32px; }
+#topBar button { min-width: 32px; }
+#modeBtn { letter-spacing: 1px; color: #8cffbe; }
 
 /* ---------- Help ---------- */
 

@@ -40,6 +40,7 @@
   <!-- Top bar -->
   <div id="topBar" class="hidden">
     <select id="locSelect" title="Teleport (keys 1-9)"></select>
+    <button id="modeBtn" title="Toggle flight physics (V)">⟠ LITTLE BIRD</button>
     <select id="qualitySelect" title="Graphics quality">
       <option value="low">Quality: Low</option>
       <option value="medium">Quality: Medium</option>
@@ -53,12 +54,14 @@
   <div id="helpPanel" class="hidden">
     <h2>EARTH DRONE</h2>
     <table>
-      <tr><td>Mouse</td><td>Look / steer</td></tr>
-      <tr><td>W / S</td><td>Fly forward / backward (where you look)</td></tr>
-      <tr><td>A / D</td><td>Strafe left / right</td></tr>
-      <tr><td>Space</td><td>Climb</td></tr>
-      <tr><td>C</td><td>Descend</td></tr>
-      <tr><td>Shift</td><td>Boost</td></tr>
+      <tr><td colspan="2" class="dim">LITTLE BIRD mode (default) — Battlefield heli controls</td></tr>
+      <tr><td>Mouse</td><td>Cyclic — tilt airframe (up = nose down, sideways = bank)</td></tr>
+      <tr><td>W / S</td><td>Collective — climb / descend</td></tr>
+      <tr><td>A / D</td><td>Rudder — yaw left / right</td></tr>
+      <tr><td>Shift</td><td>Emergency power</td></tr>
+      <tr><td>V</td><td>Switch flight model (Little Bird / FPV drone)</td></tr>
+      <tr><td colspan="2" class="dim">FPV mode — mouse aims, W flies where you look,
+        A/D strafe, Space/C up/down</td></tr>
       <tr><td>1 – 9</td><td>Teleport to landmark</td></tr>
       <tr><td>R</td><td>Reset position</td></tr>
       <tr><td>T</td><td>Cycle time of day</td></tr>
@@ -111,6 +114,6 @@
     });
   </script>
   <script src="https://cesium.com/downloads/cesiumjs/releases/1.130/Build/Cesium/Cesium.js"></script>
-  <script type="module" src="js/main.js?v=8"></script>
+  <script type="module" src="js/main.js?v=13"></script>
 </body>
 </html>

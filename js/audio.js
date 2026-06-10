@@ -73,6 +73,11 @@ export class RotorAudio {
   // throttle 0..1 (hover ~0.35), speedFrac 0..1 of max speed
   update(throttle, speedFrac) {
     if (!this.ctx || this.muted) return;
+    // setTargetAtTime throws on non-finite values — never let one through.
+    if (!Number.isFinite(throttle)) throttle = 0.3;
+    if (!Number.isFinite(speedFrac)) speedFrac = 0;
+    throttle = Math.min(1, Math.max(0, throttle));
+    speedFrac = Math.min(1, Math.max(0, speedFrac));
     const t = this.ctx.currentTime;
     const vol = 0.10 + throttle * 0.16;
     this.master.gain.setTargetAtTime(vol, t, 0.08);

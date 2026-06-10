@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8" /><title>Earth Drone — storing key…</title></head>
+<body style="background:#04090e;color:#8cffbe;font-family:system-ui;display:flex;align-items:center;justify-content:center;height:100vh;margin:0">
+  <div id="msg">Storing key…</div>
+  <script>
+    // Usage: /setkey.html#<key>  — the fragment never reaches the server
+    // and is never written to disk; it goes straight into localStorage.
+    const key = decodeURIComponent(location.hash.slice(1));
+    if (key.length > 20) {
+      localStorage.setItem("earthdrone.apikey", key);
+      location.replace("/");
+    } else {
+      document.getElementById("msg").textContent =
+        "No key in URL fragment. Open as /setkey.html#YOUR_KEY";
+    }
+  </script>
+</body>
+</html>
