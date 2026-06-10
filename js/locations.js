@@ -10,6 +10,4 @@ export const LOCATIONS = [
   { name: "San Francisco — Golden Gate", lon: -122.4790, lat: 37.8240, height: 280, heading: 170, pitch: -8 },
   { name: "Sydney — Opera House",     lon: 151.2153, lat: -33.8520, height: 250, heading: 200, pitch: -10 },
   { name: "Matterhorn — Alps",        lon: 7.6620,   lat: 45.9810,  height: 4650, heading: 230, pitch: -8 },
-  { name: "Webster Groves, MO — Old Webster", lon: -90.3573, lat: 38.5905, height: 360, heading: 0,   pitch: -12 },
-  { name: "Clayton, MO — Downtown",   lon: -90.3398, lat: 38.6463,  height: 480, heading: 350, pitch: -10 },
 ];

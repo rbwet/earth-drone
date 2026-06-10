@@ -100,9 +100,8 @@ already near level. Nose angle sets your speed; flare to brake.
 ## 🗺️ Destinations
 
 Manhattan · Shibuya · the Eiffel Tower · Burj Khalifa · the Grand Canyon ·
-Christ the Redeemer · the Golden Gate · Sydney Opera House · the Matterhorn ·
-Old Webster (Webster Groves, MO) · downtown Clayton, MO — and anywhere you
-fly to from there. Add your own in [`js/locations.js`](js/locations.js), or
+Christ the Redeemer · the Golden Gate · Sydney Opera House · the Matterhorn —
+and anywhere you fly to from there. Add your own in [`js/locations.js`](js/locations.js), or
 just search: the **G** box geocodes free text via
 [Nominatim](https://nominatim.openstreetmap.org) (OpenStreetMap, no key
 needed, Photon fallback) and understands decimal degrees, DMS
