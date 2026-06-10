@@ -15,8 +15,20 @@
 
 const MIN_SSE = 1;       // deepest LOD the tileset will serve
 const RAMP = 0.55;       // SSE multiplier per step
-const MIN_SCALE = 1.5;   // at least this much supersampling while active
 const CACHE_BYTES = 3 * 1024 * 1024 * 1024; // hold the whole area in VRAM
+
+// Adaptive supersampling: vsync caps the frame *rate*, so a GPU that
+// finishes early just idles — the only way to use the headroom is to
+// make each frame heavier. Starting from MIN_SCALE, the render scale
+// steps up while the frame rate holds near refresh and steps back down
+// if it sags, settling wherever the GPU becomes the limit. Capped so
+// the framebuffer never exceeds ~8k on its long edge.
+const SCALE_MIN = 1.5;     // floor while enhance is active
+const SCALE_MAX = 3.0;     // 9x the pixels of native — plenty
+const SCALE_STEP = 0.25;
+const TUNE_WINDOW = 1.25;  // s of FPS averaging per decision
+const FPS_UP = 55;         // at/above this: GPU has headroom, push harder
+const FPS_DOWN = 42;       // below this: too heavy, back off
 
 // tilesLoaded almost never settles to true over a dense area — the idle
 // hover wobble alone keeps a trickle of requests in flight forever. So a
@@ -47,9 +59,23 @@ export class Enhance {
     };
     this.tileset.cacheBytes = CACHE_BYTES;
     this.tileset.maximumCacheOverflowBytes = CACHE_BYTES;
-    this.viewer.resolutionScale = Math.max(this.saved.scale, MIN_SCALE);
+
+    // Framebuffer guard: never push the render target past ~8k pixels
+    // on its long edge, whatever the screen and devicePixelRatio are.
+    this.scaleCap = SCALE_MAX;
+    const canvas = this.viewer.canvas;
+    if (canvas && typeof window !== "undefined") {
+      const native = Math.max(canvas.clientWidth || 0, canvas.clientHeight || 0)
+        * (window.devicePixelRatio || 1);
+      if (native > 0) this.scaleCap = Math.min(SCALE_MAX, 8192 / native);
+    }
+    this.scale = Math.min(Math.max(this.saved.scale, SCALE_MIN), this.scaleCap);
+    this.viewer.resolutionScale = this.scale;
+
     this.statusTimer = 0;
     this.stepTimer = 0;
+    this.fpsFrames = 0;
+    this.fpsTime = 0;
     this.statusEl.classList.remove("hidden");
   }
 
@@ -88,19 +114,37 @@ export class Enhance {
     }
     t.maximumScreenSpaceError = this.sse;
 
+    // Supersampling auto-tuner: convert spare frame time into pixels.
+    this.fpsFrames++;
+    this.fpsTime += dt;
+    if (this.fpsTime >= TUNE_WINDOW) {
+      const fps = this.fpsFrames / this.fpsTime;
+      this.fpsFrames = 0;
+      this.fpsTime = 0;
+      if (fps >= FPS_UP && this.scale < this.scaleCap) {
+        this.scale = Math.min(this.scaleCap, this.scale + SCALE_STEP);
+        this.viewer.resolutionScale = this.scale;
+      } else if (fps < FPS_DOWN && this.scale > SCALE_MIN) {
+        this.scale = Math.max(SCALE_MIN, this.scale - SCALE_STEP);
+        this.viewer.resolutionScale = this.scale;
+      }
+    }
+
     this.statusTimer -= dt;
     if (this.statusTimer > 0) return;
     this.statusTimer = 0.25;
 
+    const scaleTag = `${this.scale.toFixed(2)}× render`;
     if (this.sse <= MIN_SSE && (t.tilesLoaded || pending <= SETTLE_PENDING)) {
-      this.statusEl.textContent = "✦ MAX DETAIL — everything Google has is loaded";
+      this.statusEl.textContent =
+        `✦ MAX DETAIL — everything Google has is loaded • ${scaleTag}`;
     } else {
       // Progress through the ramp, measured in LOD halvings completed.
       const total = Math.log(this.startSSE / MIN_SSE);
       const done = Math.log(this.startSSE / this.sse);
       const pct = total > 0 ? Math.min(99, Math.round((done / total) * 100)) : 99;
       this.statusEl.textContent =
-        `✦ ENHANCING ${pct}% — ${pending} tiles streaming`;
+        `✦ ENHANCING ${pct}% — ${pending} tiles streaming • ${scaleTag}`;
     }
   }
 }
