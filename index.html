@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Earth Drone — FPV over the real world</title>
+  <link rel="stylesheet" href="https://cesium.com/downloads/cesiumjs/releases/1.130/Build/Cesium/Widgets/widgets.css" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div id="cesiumContainer"></div>
+
+  <!-- HUD -->
+  <div id="hud" class="hidden">
+    <div id="crosshair"></div>
+
+    <div id="compass">
+      <div id="compassTape"></div>
+      <div id="compassNeedle"></div>
+    </div>
+
+    <div id="speedBox" class="hudPanel">
+      <div class="hudLabel">SPEED</div>
+      <div class="hudValue"><span id="speedVal">0</span><span class="hudUnit"> km/h</span></div>
+      <div id="boostBar"><div id="boostFill"></div></div>
+    </div>
+
+    <div id="altBox" class="hudPanel">
+      <div class="hudLabel">ALTITUDE</div>
+      <div class="hudValue"><span id="aglVal">0</span><span class="hudUnit"> m AGL</span></div>
+      <div class="hudSub"><span id="mslVal">0</span> m MSL</div>
+      <div class="hudSub" id="coordsVal">0.0000, 0.0000</div>
+    </div>
+
+    <div id="locName" class="hudPanel"></div>
+
+    <div id="clickToFly" class="hidden">CLICK TO FLY</div>
+  </div>
+
+  <!-- Top bar -->
+  <div id="topBar" class="hidden">
+    <select id="locSelect" title="Teleport (keys 1-9)"></select>
+    <select id="qualitySelect" title="Graphics quality">
+      <option value="low">Quality: Low</option>
+      <option value="medium">Quality: Medium</option>
+      <option value="high" selected>Quality: High</option>
+      <option value="ultra">Quality: Ultra</option>
+    </select>
+    <button id="helpBtn" title="Help (H)">?</button>
+  </div>
+
+  <!-- Help panel -->
+  <div id="helpPanel" class="hidden">
+    <h2>EARTH DRONE</h2>
+    <table>
+      <tr><td>Mouse</td><td>Look / steer</td></tr>
+      <tr><td>W / S</td><td>Fly forward / backward (where you look)</td></tr>
+      <tr><td>A / D</td><td>Strafe left / right</td></tr>
+      <tr><td>Space</td><td>Climb</td></tr>
+      <tr><td>C</td><td>Descend</td></tr>
+      <tr><td>Shift</td><td>Boost</td></tr>
+      <tr><td>1 – 9</td><td>Teleport to landmark</td></tr>
+      <tr><td>R</td><td>Reset position</td></tr>
+      <tr><td>T</td><td>Cycle time of day</td></tr>
+      <tr><td>M</td><td>Mute rotor sound</td></tr>
+      <tr><td>H</td><td>Toggle this help</td></tr>
+      <tr><td>K</td><td>Change API key</td></tr>
+      <tr><td>Esc</td><td>Release mouse</td></tr>
+    </table>
+    <p class="dim">Photorealistic 3D Tiles streamed live from Google — the same data as Google Earth.</p>
+    <p class="dim" id="gpuInfo">GPU: detecting…</p>
+  </div>
+
+  <div id="gpuWarn" class="hidden">
+    ⚠ SOFTWARE RENDERING — your GPU is not being used.<br/>
+    Enable hardware acceleration in your browser settings
+    (<span class="mono">chrome://settings/system</span> or <span class="mono">edge://settings/system</span>), then restart the browser.
+  </div>
+
+  <!-- API key modal -->
+  <div id="keyModal">
+    <div id="keyCard">
+      <h1>EARTH DRONE</h1>
+      <p>Fly an FPV drone over the real planet, rendered with Google&rsquo;s Photorealistic 3D Tiles (the data behind Google Earth).</p>
+      <p>Paste a <b>Google Maps Platform API key</b> with the <i>Map Tiles API</i> enabled
+        (<a href="https://developers.google.com/maps/documentation/tile/get-api-key" target="_blank" rel="noopener">get one here</a> — free tier is plenty),
+        or a <b>Cesium ion access token</b> (<a href="https://ion.cesium.com/tokens" target="_blank" rel="noopener">ion.cesium.com</a>).</p>
+      <input id="keyInput" type="text" placeholder="AIza...  or  eyJhbGci..." spellcheck="false" autocomplete="off" />
+      <button id="keyGo">TAKE OFF</button>
+      <p id="keyError" class="err hidden"></p>
+      <p class="dim">The key is stored only in your browser&rsquo;s localStorage.</p>
+    </div>
+  </div>
+
+  <div id="loading" class="hidden"><div class="spinner"></div><div>Spooling up rotors…</div></div>
+
+  <script>
+    // Surface any boot failure on the key screen instead of failing silently.
+    window.addEventListener("error", (e) => {
+      const el = document.getElementById("keyError");
+      if (!el) return;
+      el.textContent = "Boot error: " + (e.message || e.error || "script failed to load") +
+        (e.filename ? " (" + e.filename.split("/").pop() + ":" + e.lineno + ")" : "");
+      el.classList.remove("hidden");
+    }, true);
+    window.addEventListener("unhandledrejection", (e) => {
+      const el = document.getElementById("keyError");
+      if (!el) return;
+      el.textContent = "Boot error: " + (e.reason && e.reason.message ? e.reason.message : e.reason);
+      el.classList.remove("hidden");
+    });
+  </script>
+  <script src="https://cesium.com/downloads/cesiumjs/releases/1.130/Build/Cesium/Cesium.js"></script>
+  <script type="module" src="js/main.js?v=8"></script>
+</body>
+</html>

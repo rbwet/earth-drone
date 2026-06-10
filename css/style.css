@@ -1,0 +1,308 @@
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #000;
+  font-family: "Segoe UI", system-ui, sans-serif;
+  color: #e8f4ff;
+}
+
+#cesiumContainer {
+  position: absolute;
+  inset: 0;
+}
+
+.hidden { display: none !important; }
+
+/* ---------- HUD ---------- */
+
+#hud {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  user-select: none;
+  text-shadow: 0 0 6px rgba(0, 0, 0, 0.9);
+}
+
+#crosshair {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 6px;
+  height: 6px;
+  margin: -3px 0 0 -3px;
+  border-radius: 50%;
+  background: rgba(140, 255, 190, 0.9);
+  box-shadow: 0 0 8px rgba(140, 255, 190, 0.7), 0 0 2px #000;
+}
+
+.hudPanel {
+  position: absolute;
+  padding: 10px 16px;
+  background: linear-gradient(180deg, rgba(8, 20, 28, 0.55), rgba(8, 20, 28, 0.35));
+  border: 1px solid rgba(140, 255, 190, 0.25);
+  border-radius: 8px;
+  backdrop-filter: blur(4px);
+}
+
+.hudLabel {
+  font-size: 10px;
+  letter-spacing: 3px;
+  color: rgba(140, 255, 190, 0.8);
+}
+
+.hudValue {
+  font-size: 30px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+
+.hudUnit { font-size: 13px; font-weight: 400; opacity: 0.7; }
+.hudSub  { font-size: 12px; opacity: 0.65; font-variant-numeric: tabular-nums; }
+
+#speedBox { left: 28px;  bottom: 28px; min-width: 170px; }
+#altBox   { right: 28px; bottom: 28px; min-width: 190px; text-align: right; }
+
+#boostBar {
+  margin-top: 6px;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.12);
+  overflow: hidden;
+}
+
+#boostFill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, #51ffa8, #ffe168);
+  transition: width 0.08s linear;
+}
+
+#locName {
+  left: 50%;
+  bottom: 28px;
+  transform: translateX(-50%);
+  font-size: 13px;
+  letter-spacing: 2px;
+  opacity: 0.85;
+}
+
+/* ---------- Compass ---------- */
+
+#compass {
+  position: absolute;
+  top: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 340px;
+  height: 30px;
+  overflow: hidden;
+  border-radius: 6px;
+  background: rgba(8, 20, 28, 0.45);
+  border: 1px solid rgba(140, 255, 190, 0.2);
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 18%, #000 82%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 18%, #000 82%, transparent);
+}
+
+#compassTape {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  white-space: nowrap;
+  font-size: 12px;
+  line-height: 30px;
+  letter-spacing: 1px;
+  will-change: transform;
+}
+
+#compassTape span {
+  display: inline-block;
+  width: 60px;
+  text-align: center;
+  color: rgba(232, 244, 255, 0.85);
+}
+
+#compassTape span.cardinal { color: #8cffbe; font-weight: 700; }
+
+#compassNeedle {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  width: 2px;
+  height: 100%;
+  margin-left: -1px;
+  background: #8cffbe;
+  box-shadow: 0 0 6px rgba(140, 255, 190, 0.8);
+}
+
+#clickToFly {
+  position: absolute;
+  left: 50%;
+  top: 58%;
+  transform: translateX(-50%);
+  font-size: 18px;
+  letter-spacing: 6px;
+  color: #fff;
+  animation: pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.35; }
+  50%      { opacity: 1; }
+}
+
+/* ---------- Top bar ---------- */
+
+#topBar {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  display: flex;
+  gap: 8px;
+  z-index: 5;
+}
+
+#topBar select, #topBar button {
+  background: rgba(8, 20, 28, 0.7);
+  color: #e8f4ff;
+  border: 1px solid rgba(140, 255, 190, 0.3);
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 12px;
+  cursor: pointer;
+  outline: none;
+}
+
+#topBar button { width: 32px; }
+
+/* ---------- Help ---------- */
+
+#helpPanel {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 10;
+  padding: 26px 34px;
+  background: rgba(6, 14, 20, 0.92);
+  border: 1px solid rgba(140, 255, 190, 0.35);
+  border-radius: 12px;
+  min-width: 360px;
+}
+
+#helpPanel h2 { margin: 0 0 14px; letter-spacing: 6px; font-weight: 300; color: #8cffbe; }
+#helpPanel table { border-collapse: collapse; width: 100%; }
+#helpPanel td { padding: 4px 14px 4px 0; font-size: 14px; }
+#helpPanel td:first-child { color: #8cffbe; font-weight: 600; white-space: nowrap; }
+
+/* ---------- Key modal ---------- */
+
+#keyModal {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(ellipse at 50% 35%, #0c2030 0%, #04090e 70%);
+}
+
+#keyCard {
+  max-width: 540px;
+  padding: 40px 46px;
+  background: rgba(8, 20, 28, 0.85);
+  border: 1px solid rgba(140, 255, 190, 0.3);
+  border-radius: 14px;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6);
+}
+
+#keyCard h1 { margin: 0 0 10px; letter-spacing: 10px; font-weight: 200; color: #8cffbe; }
+#keyCard p { font-size: 14px; line-height: 1.55; color: rgba(232, 244, 255, 0.85); }
+#keyCard a { color: #8cffbe; }
+
+#keyInput {
+  width: 100%;
+  margin: 12px 0;
+  padding: 12px 14px;
+  font-size: 14px;
+  font-family: Consolas, monospace;
+  color: #e8f4ff;
+  background: rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(140, 255, 190, 0.35);
+  border-radius: 8px;
+  outline: none;
+}
+
+#keyInput:focus { border-color: #8cffbe; }
+
+#keyGo {
+  width: 100%;
+  padding: 12px;
+  font-size: 15px;
+  letter-spacing: 4px;
+  font-weight: 600;
+  color: #04121c;
+  background: linear-gradient(180deg, #8cffbe, #4fd690);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+#keyGo:hover { filter: brightness(1.08); }
+
+.err { color: #ff7b7b; }
+.dim { opacity: 0.5; font-size: 12px; }
+.mono { font-family: Consolas, monospace; }
+
+#gpuWarn {
+  position: absolute;
+  top: 60px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 12;
+  padding: 12px 20px;
+  background: rgba(80, 20, 10, 0.92);
+  border: 1px solid #ff7b7b;
+  border-radius: 8px;
+  color: #ffd0d0;
+  font-size: 13px;
+  line-height: 1.6;
+  text-align: center;
+}
+
+/* ---------- Loading ---------- */
+
+#loading {
+  position: absolute;
+  inset: 0;
+  z-index: 15;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  align-items: center;
+  justify-content: center;
+  background: rgba(4, 9, 14, 0.85);
+  letter-spacing: 3px;
+  font-size: 14px;
+}
+
+.spinner {
+  width: 44px;
+  height: 44px;
+  border: 3px solid rgba(140, 255, 190, 0.2);
+  border-top-color: #8cffbe;
+  border-radius: 50%;
+  animation: spin 0.9s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Keep Cesium's required attribution readable but unobtrusive */
+.cesium-viewer-bottom {
+  opacity: 0.7;
+}

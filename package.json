@@ -1,0 +1,9 @@
+{
+  "name": "earth-drone",
+  "version": "1.0.0",
+  "description": "FPV drone simulator over Google Photorealistic 3D Tiles",
+  "private": true,
+  "scripts": {
+    "dev": "npx -y serve -l 8080 ."
+  }
+}
