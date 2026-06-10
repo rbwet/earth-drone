@@ -39,6 +39,10 @@
 
   <!-- Top bar -->
   <div id="topBar" class="hidden">
+    <form id="goForm" title="Fly anywhere — place name, address, or lat, lon (G)">
+      <input id="goInput" type="text" placeholder="⌕ Go to: place or lat, lon"
+        spellcheck="false" autocomplete="off" />
+    </form>
     <select id="locSelect" title="Teleport (keys 1-9)"></select>
     <button id="modeBtn" title="Toggle flight physics (V)">⟠ LITTLE BIRD</button>
     <select id="qualitySelect" title="Graphics quality">
@@ -63,6 +67,8 @@
       <tr><td colspan="2" class="dim">FPV mode — mouse aims, W flies where you look,
         A/D strafe, Space/C up/down</td></tr>
       <tr><td>1 – 9</td><td>Teleport to landmark</td></tr>
+      <tr><td>G</td><td>Go anywhere — type a place name or coordinates
+        (<span class="mono">48.858, 2.294</span> or <span class="mono">48°51′29″N 2°17′40″E</span>)</td></tr>
       <tr><td>R</td><td>Reset position</td></tr>
       <tr><td>T</td><td>Cycle time of day</td></tr>
       <tr><td>M</td><td>Mute rotor sound</td></tr>
@@ -70,7 +76,8 @@
       <tr><td>K</td><td>Change API key</td></tr>
       <tr><td>Esc</td><td>Release mouse</td></tr>
     </table>
-    <p class="dim">Photorealistic 3D Tiles streamed live from Google — the same data as Google Earth.</p>
+    <p class="dim">Photorealistic 3D Tiles streamed live from Google — the same data as Google Earth.
+      Place search by <a href="https://nominatim.openstreetmap.org" target="_blank" rel="noopener">Nominatim / OpenStreetMap</a>.</p>
     <p class="dim" id="gpuInfo">GPU: detecting…</p>
   </div>
 
@@ -114,6 +121,6 @@
     });
   </script>
   <script src="https://cesium.com/downloads/cesiumjs/releases/1.130/Build/Cesium/Cesium.js"></script>
-  <script type="module" src="js/main.js?v=13"></script>
+  <script type="module" src="js/main.js?v=14"></script>
 </body>
 </html>

@@ -1,4 +1,5 @@
 import { LOCATIONS } from "./locations.js";
+import { parseCoords, geocode } from "./geocode.js";
 import { Controls } from "./controls.js";
 import { Drone } from "./drone.js";
 import { Hud } from "./hud.js";
@@ -34,6 +35,8 @@ const els = {
   helpBtn: document.getElementById("helpBtn"),
   clickToFly: document.getElementById("clickToFly"),
   locSelect: document.getElementById("locSelect"),
+  goForm: document.getElementById("goForm"),
+  goInput: document.getElementById("goInput"),
   qualitySelect: document.getElementById("qualitySelect"),
   locName: document.getElementById("locName"),
   modeBtn: document.getElementById("modeBtn"),
@@ -56,9 +59,10 @@ function gpuRenderer() {
     return "unknown";
   }
 }
-let currentLoc = 0;
+let lastDest = LOCATIONS[0]; // where R resets to — preset or searched
 let timeIdx = 1;
 let locNameTimer;
+let goSeq = 0; // search generation — a newer search cancels an older one
 
 function showError(msg) {
   els.keyError.textContent = msg;
@@ -145,7 +149,12 @@ async function init(key) {
   viewer.canvas.addEventListener("click", () => audio.start());
 
   controls.onTeleport = teleport;
-  controls.onReset = () => teleport(currentLoc);
+  controls.onReset = () => flyTo(lastDest);
+  controls.onGoTo = () => {
+    document.exitPointerLock?.();
+    els.goInput.focus();
+    els.goInput.select();
+  };
   controls.onToggleHelp = () => els.helpPanel.classList.toggle("hidden");
   controls.onCycleTime = cycleTime;
   controls.onToggleMute = () => audio.toggleMute();
@@ -154,10 +163,7 @@ async function init(key) {
     const m = drone.toggleMode();
     const label = m === "heli" ? "LITTLE BIRD" : "OG DRONE";
     els.modeBtn.textContent = (m === "heli" ? "⟠ " : "◈ ") + label;
-    els.locName.textContent = "FLIGHT MODEL: " + label;
-    els.locName.style.opacity = "0.95";
-    clearTimeout(locNameTimer);
-    locNameTimer = setTimeout(() => { els.locName.style.opacity = "0"; }, 3000);
+    showStatus("FLIGHT MODEL: " + label, 3000);
   };
   controls.onToggleMode = toggleFlightModel;
   els.modeBtn.addEventListener("click", () => {
@@ -174,13 +180,24 @@ async function init(key) {
     teleport(Number(els.locSelect.value));
     els.locSelect.blur();
   });
+  els.goForm.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const query = els.goInput.value.trim();
+    if (query) goTo(query);
+    els.goInput.blur();
+  });
+  els.goInput.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") els.goInput.blur();
+  });
   els.qualitySelect.addEventListener("change", () => {
     applyQuality(els.qualitySelect.value);
     els.qualitySelect.blur();
   });
   els.helpBtn.addEventListener("click", () => els.helpPanel.classList.toggle("hidden"));
 
-  teleport(0);
+  // ?loc=N spawns at that landmark — shareable location links.
+  const locParam = parseInt(new URLSearchParams(location.search).get("loc"), 10);
+  teleport(locParam >= 0 && locParam < LOCATIONS.length ? locParam : 0);
   setLocalTime(TIMES_LOCAL[timeIdx]);
 
   // --- Flight loop + FPS governor ---
@@ -226,22 +243,96 @@ async function init(key) {
   setTimeout(hideLoading, 15000); // fallback if the event never fires
 }
 
-function teleport(i) {
-  if (i < 0 || i >= LOCATIONS.length) return;
-  currentLoc = i;
-  const l = LOCATIONS[i];
-  drone.setPose(l.lon, l.lat, l.height, l.heading, l.pitch);
-  els.locSelect.value = String(i);
-  els.locName.textContent = l.name.toUpperCase();
+// Show a message in the bottom-center panel; 0 = stay until replaced.
+function showStatus(msg, ms = 4000) {
+  els.locName.textContent = msg;
   els.locName.style.opacity = "0.95";
   clearTimeout(locNameTimer);
-  locNameTimer = setTimeout(() => { els.locName.style.opacity = "0"; }, 4000);
+  if (ms > 0) {
+    locNameTimer = setTimeout(() => { els.locName.style.opacity = "0"; }, ms);
+  }
+}
+
+function flyTo(dest) {
+  lastDest = dest;
+  drone.setPose(dest.lon, dest.lat, dest.height, dest.heading ?? 0, dest.pitch ?? -12);
+  showStatus(dest.name.toUpperCase());
   setLocalTime(TIMES_LOCAL[timeIdx]);
+}
+
+function teleport(i) {
+  if (!Number.isInteger(i) || i < 0 || i >= LOCATIONS.length) return;
+  els.locSelect.value = String(i);
+  flyTo(LOCATIONS[i]);
+}
+
+// Mark the dropdown as "somewhere custom" without losing the presets.
+function selectCustom(name) {
+  let opt = document.getElementById("customOpt");
+  if (!opt) {
+    opt = document.createElement("option");
+    opt.id = "customOpt";
+    opt.value = "custom";
+    opt.disabled = true;
+    opt.hidden = true;
+    els.locSelect.appendChild(opt);
+  }
+  opt.textContent = "✈ " + name;
+  els.locSelect.value = "custom";
+}
+
+// Ground height at lon/lat from the 3D tiles, loading them if needed.
+// Resolves undefined on timeout or over unloadable areas (open ocean).
+async function sampleGround(lon, lat, timeoutMs = 12000) {
+  if (!viewer.scene.sampleHeightSupported) return undefined;
+  const carto = Cesium.Cartographic.fromDegrees(lon, lat);
+  try {
+    const res = await Promise.race([
+      viewer.scene.sampleHeightMostDetailed([carto]),
+      new Promise((resolve) => setTimeout(resolve, timeoutMs)),
+    ]);
+    const h = res?.[0]?.height;
+    if (Number.isFinite(h)) return h;
+  } catch (e) {
+    console.warn("[EarthDrone] ground sample failed:", e);
+  }
+  return undefined;
+}
+
+// The search box: raw coordinates fly direct; anything else is geocoded.
+async function goTo(query) {
+  const seq = ++goSeq;
+  showStatus("LOCATING: " + query.toUpperCase() + "…", 0);
+  try {
+    const coords = parseCoords(query);
+    let target = coords
+      ? { ...coords, name: `${coords.lat.toFixed(4)}, ${coords.lon.toFixed(4)}`, spanM: 0 }
+      : await geocode(query);
+    if (!target) {
+      showStatus("NO RESULTS: " + query.toUpperCase(), 5000);
+      return;
+    }
+    if (seq !== goSeq) return; // superseded by a newer search
+
+    const ground = await sampleGround(target.lon, target.lat);
+    if (seq !== goSeq) return;
+
+    // Spawn height scales with the size of the place: a building gets a
+    // close-up, a whole city gets an overview.
+    const above = Math.min(1500, Math.max(150, target.spanM * 0.25));
+    const height = ground !== undefined ? ground + above : Math.max(1500, above);
+    flyTo({ lon: target.lon, lat: target.lat, height, heading: 0, pitch: -14, name: target.name });
+    selectCustom(target.name);
+  } catch (err) {
+    if (seq === goSeq) {
+      showStatus("SEARCH FAILED: " + (err.message ?? err), 6000);
+    }
+  }
 }
 
 // Pick a UTC time so the *local solar* time at the drone is roughly `hours`.
 function setLocalTime(hours) {
-  const lonDeg = LOCATIONS[currentLoc].lon;
+  const lonDeg = lastDest.lon;
   let utc = hours - lonDeg / 15;
   utc = ((utc % 24) + 24) % 24;
   const hh = String(Math.floor(utc)).padStart(2, "0");

@@ -179,6 +179,23 @@ html, body {
 }
 
 #topBar button { min-width: 32px; }
+
+#goForm { display: flex; }
+
+#goInput {
+  width: 210px;
+  background: rgba(8, 20, 28, 0.7);
+  color: #e8f4ff;
+  border: 1px solid rgba(140, 255, 190, 0.3);
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 12px;
+  outline: none;
+  transition: width 0.15s ease, border-color 0.15s ease;
+}
+
+#goInput:focus { border-color: #8cffbe; width: 290px; }
+#goInput::placeholder { color: rgba(232, 244, 255, 0.45); }
 #modeBtn { letter-spacing: 1px; color: #8cffbe; }
 
 /* ---------- Help ---------- */

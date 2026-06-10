@@ -16,6 +16,7 @@ export class Controls {
     this.onToggleMute = null;
     this.onChangeKey = null;
     this.onToggleMode = null;
+    this.onGoTo = null;      // focus the location search box
 
     canvas.addEventListener("click", () => {
       if (!this.locked) canvas.requestPointerLock();
@@ -43,6 +44,7 @@ export class Controls {
       const code = e.code;
       if (code === "KeyH") { this.onToggleHelp?.(); e.preventDefault(); return; }
       if (code === "KeyK") { this.onChangeKey?.(); return; }
+      if (code === "KeyG") { this.onGoTo?.(); e.preventDefault(); return; }
 
       if (!this.locked) return;
 
