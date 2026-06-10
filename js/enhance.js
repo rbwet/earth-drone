@@ -14,9 +14,18 @@
 // Moving to a new area while active restarts the ramp there.
 
 const MIN_SSE = 1;       // deepest LOD the tileset will serve
-const RAMP = 0.55;       // SSE multiplier per fully-loaded step
+const RAMP = 0.55;       // SSE multiplier per step
 const MIN_SCALE = 1.5;   // at least this much supersampling while active
 const CACHE_BYTES = 3 * 1024 * 1024 * 1024; // hold the whole area in VRAM
+
+// tilesLoaded almost never settles to true over a dense area — the idle
+// hover wobble alone keeps a trickle of requests in flight forever. So a
+// layer counts as "in" when the stream has mostly drained, after a short
+// dwell so a just-lowered SSE has time to issue its requests; a hard
+// timeout guarantees the ramp always reaches the bottom regardless.
+const SETTLE_PENDING = 6; // ...this many in-flight tiles ≈ drained
+const STEP_DWELL = 1.0;   // s — minimum time per layer
+const STEP_TIMEOUT = 8;   // s — maximum time per layer
 
 export class Enhance {
   constructor(viewer, tileset, statusEl) {
@@ -40,6 +49,7 @@ export class Enhance {
     this.tileset.maximumCacheOverflowBytes = CACHE_BYTES;
     this.viewer.resolutionScale = Math.max(this.saved.scale, MIN_SCALE);
     this.statusTimer = 0;
+    this.stepTimer = 0;
     this.statusEl.classList.remove("hidden");
   }
 
@@ -57,13 +67,24 @@ export class Enhance {
     if (!this.active) return;
     this.startSSE = Math.max(fromSSE, MIN_SSE + 0.001);
     this.sse = this.startSSE;
+    this.stepTimer = 0;
   }
 
   // Called every frame while active; owns maximumScreenSpaceError.
   tick(dt) {
     const t = this.tileset;
-    if (t.tilesLoaded && this.sse > MIN_SSE) {
-      this.sse = Math.max(MIN_SSE, this.sse * RAMP);
+    const stats = t.statistics;
+    const pending = (stats?.numberOfPendingRequests ?? 0)
+      + (stats?.numberOfTilesProcessing ?? 0);
+
+    this.stepTimer += dt;
+    if (this.sse > MIN_SSE) {
+      const settled = t.tilesLoaded || pending <= SETTLE_PENDING;
+      if ((settled && this.stepTimer >= STEP_DWELL)
+          || this.stepTimer >= STEP_TIMEOUT) {
+        this.sse = Math.max(MIN_SSE, this.sse * RAMP);
+        this.stepTimer = 0;
+      }
     }
     t.maximumScreenSpaceError = this.sse;
 
@@ -71,10 +92,7 @@ export class Enhance {
     if (this.statusTimer > 0) return;
     this.statusTimer = 0.25;
 
-    const stats = t.statistics;
-    const pending = (stats?.numberOfPendingRequests ?? 0)
-      + (stats?.numberOfTilesProcessing ?? 0);
-    if (this.sse <= MIN_SSE && t.tilesLoaded) {
+    if (this.sse <= MIN_SSE && (t.tilesLoaded || pending <= SETTLE_PENDING)) {
       this.statusEl.textContent = "✦ MAX DETAIL — everything Google has is loaded";
     } else {
       // Progress through the ramp, measured in LOD halvings completed.
